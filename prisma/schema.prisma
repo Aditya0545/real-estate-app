@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String      @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String      @unique
+  phone     String?     // Optional phone field without unique constraint for now
+  password  String
+  role      UserRole    @default(USER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  properties Property[]
+  messages   Message[]
+  favorites  Property[] @relation("UserFavorites")
+}
+
+model Property {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  price       Float
+  location    String
+  address     String?         // Keep address fields
+  city        String?
+  state       String?
+  zipCode     String?
+  type        PropertyType    // Use enum
+  status      PropertyStatus  @default(AVAILABLE) // Use enum
+  bedrooms    Int?
+  bathrooms   Int?
+  area        Float?
+  images      String[]        // Keep images array
+  
+  // Relations
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  messages    Message[]
+  favoritedBy User[]         @relation("UserFavorites")
+  
+  // Timestamps
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  content     String
+  createdAt   DateTime  @default(now())
+  userId      String
+  propertyId  String
+  user        User      @relation(fields: [userId], references: [id])
+  property    Property  @relation(fields: [propertyId], references: [id])
+
+  @@index([userId])
+  @@index([propertyId])
+}
+
+enum UserRole {
+  USER
+  AGENT
+  ADMIN
+}
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  CONDO
+  TOWNHOUSE
+  LAND
+  COMMERCIAL
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  PENDING
+  SOLD
+  RENTED
+} 
